@@ -9,17 +9,66 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// 1. GET: ดึงรายชื่อโรงแรมทั้งหมด
+// 1. GET: ดึงรายชื่อโรงแรมทั้งหมด (คำนวณราคาเริ่มต้นจากตาราง rooms)
 app.get('/api/hotels', async (req, res) => {
   try {
-    const [hotels] = await db.query('SELECT * FROM hotels');
+    const sql = `
+      SELECT h.*, MIN(r.price_per_night) AS starting_price
+      FROM hotels h
+      LEFT JOIN rooms r ON h.hotel_id = r.hotel_id
+      GROUP BY h.hotel_id
+    `;
+    const [hotels] = await db.query(sql);
     res.json({ success: true, data: hotels });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// 2. GET: ดึงข้อมูลรายละเอียดโรงแรม พร้อมประเภทห้องพัก
+// 1.5 POST: เพิ่มข้อมูลโรงแรมใหม่ (ปรับคอลัมน์ตามตาราง hotels ใน ERD)
+app.post('/api/hotels', async (req, res) => {
+  const {
+    name,
+    location,
+    description,
+    rating,
+    check_in_time,
+    check_out_time,
+    has_pool,
+    has_breakfast,
+    has_wifi,
+  } = req.body;
+
+  try {
+    const sql = `
+      INSERT INTO hotels 
+      (name, location, description, rating, check_in_time, check_out_time, has_pool, has_breakfast, has_wifi)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const [result] = await db.query(sql, [
+      name,
+      location || '',
+      description || '',
+      rating || 0.0,
+      check_in_time || '14:00:00',
+      check_out_time || '12:00:00',
+      has_pool !== undefined ? has_pool : 1,
+      has_breakfast !== undefined ? has_breakfast : 1,
+      has_wifi !== undefined ? has_wifi : 1,
+    ]);
+
+    res.status(201).json({
+      success: true,
+      message: 'เพิ่มข้อมูลโรงแรมสำเร็จ',
+      hotelId: result.insertId,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// 2. GET: ดึงข้อมูลรายละเอียดโรงแรม พร้อมประเภทห้องพักและแท็ก
 app.get('/api/hotels/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -60,16 +109,16 @@ app.post('/api/bookings', async (req, res) => {
     numGuests,
     specialRequest,
     totalAmount,
+    status,
   } = req.body;
 
-  // สุ่มสร้าง Booking Code เช่น TN-8291
   const bookingCode = 'TN-' + Math.floor(1000 + Math.random() * 9000);
 
   try {
     const sql = `
       INSERT INTO bookings 
-      (booking_code, user_id, hotel_id, room_id, guest_name, guest_email, guest_phone, check_in_date, check_out_date, num_rooms, num_guests, special_request, total_amount)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (booking_code, user_id, hotel_id, room_id, guest_name, guest_email, guest_phone, check_in_date, check_out_date, num_rooms, num_guests, special_request, total_amount, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await db.query(sql, [
@@ -82,10 +131,11 @@ app.post('/api/bookings', async (req, res) => {
       guestPhone,
       checkIn,
       checkOut,
-      numRooms,
-      numGuests,
-      specialRequest,
+      numRooms || 1,
+      numGuests || 1,
+      specialRequest || '',
       totalAmount,
+      status || 'confirmed',
     ]);
 
     res.status(201).json({
