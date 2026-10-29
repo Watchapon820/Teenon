@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'screens/login_screen.dart';
+import 'auth/session.dart';
+import 'screens/startup_screen.dart';
 import 'theme/app_theme.dart';
 
 class TeenonApp extends StatelessWidget {
@@ -8,11 +9,15 @@ class TeenonApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Teenon Hotel Booking',
-      theme: buildAppTheme(),
-      home: const LoginScreen(),
+    // ผู้ใช้ทั่วไปได้ธีมส้ม แอดมินได้ธีมฟ้า (สลับอัตโนมัติเมื่อล็อกอิน/ออกจากระบบ)
+    return ValueListenableBuilder<bool>(
+      valueListenable: Session.adminMode,
+      builder: (context, admin, _) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Teenon Hotel Booking',
+        theme: buildAppTheme(admin: admin),
+        home: const StartupScreen(),
+      ),
     );
   }
 }

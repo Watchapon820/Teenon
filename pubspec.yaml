@@ -10,6 +10,24 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.2.0
+  image_picker: ^1.2.4
+  qr_flutter: ^4.1.0
+  shared_preferences: ^2.5.6
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/
+  fonts:
+    # Prompt (SIL OFL) - ฟอนต์ไทย/อังกฤษทรงกลมมน อ่านง่าย
+    - family: Prompt
+      fonts:
+        - asset: assets/fonts/Prompt-Regular.ttf
+        - asset: assets/fonts/Prompt-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Prompt-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Prompt-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Prompt-ExtraBold.ttf
+          weight: 800

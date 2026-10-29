@@ -1,114 +1,92 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../api_service.dart';
+import '../auth/session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/chat_thread.dart';
+import 'contact_screen.dart';
 
-class ChatScreen extends StatefulWidget {
+/// แชทกับทีมงาน (แอดมิน) — ตอบโต้ได้ต่อเนื่อง ข้อความใหม่เข้ามาเองโดยไม่ต้องรีเฟรช
+/// ช่องทางติดต่ออื่น (โทร/LINE/อีเมล) อยู่หลังปุ่ม ℹ︎ มุมขวาบน
+class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
-
-  @override
-  State<ChatScreen> createState() => _ChatScreenState();
-}
-
-class _ChatScreenState extends State<ChatScreen> {
-  final input = TextEditingController();
-  final messages = <({String text, bool mine})>[
-    (text: 'สวัสดีค่ะ ยินดีช่วยแนะนำที่พักให้คุณ', mine: false),
-    (text: 'ช่วยแนะนำที่พักริมทะเลให้หน่อย', mine: true),
-    (text: 'แนะนำ Blue Coast Resort คะแนน 4.9 เหมาะสำหรับวันพักผ่อนค่ะ', mine: false),
-  ];
-
-  @override
-  void dispose() {
-    input.dispose();
-    super.dispose();
-  }
-
-  void send() {
-    final text = input.text.trim();
-    if (text.isEmpty) return;
-    setState(() {
-      messages.add((text: text, mine: true));
-      messages.add((text: 'รับข้อความแล้วค่ะ นี่เป็นการตอบกลับตัวอย่างของ Frontend Demo', mine: false));
-      input.clear();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Teenon Assistant')),
-      body: SafeArea(
-        child: Column(
+      appBar: AppBar(
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              margin: const EdgeInsets.fromLTRB(20, 6, 20, 12),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.07), borderRadius: BorderRadius.circular(20)),
-              child: const Row(
-                children: [
-                  GradientIconBox(icon: Icons.support_agent_rounded),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('ผู้ช่วยจองที่พัก', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text)),
-                        SizedBox(height: 2),
-                        Text('ตอบกลับตัวอย่าง • Frontend only', style: TextStyle(color: AppColors.textSoft, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final message = messages[index];
-                  return Align(
-                    alignment: message.mine ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      constraints: const BoxConstraints(maxWidth: 300),
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: message.mine ? AppColors.primary : Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: const Radius.circular(18),
-                          topRight: const Radius.circular(18),
-                          bottomLeft: Radius.circular(message.mine ? 18 : 5),
-                          bottomRight: Radius.circular(message.mine ? 5 : 18),
-                        ),
-                        border: message.mine ? null : Border.all(color: AppColors.border),
-                      ),
-                      child: Text(message.text, style: TextStyle(color: message.mine ? Colors.white : AppColors.text, height: 1.35)),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-              color: Colors.white,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: input,
-                      onSubmitted: (_) => send(),
-                      decoration: const InputDecoration(hintText: 'พิมพ์ข้อความ...', prefixIcon: Icon(Icons.chat_bubble_outline_rounded)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  IconButton.filled(onPressed: send, icon: const Icon(Icons.send_rounded)),
-                ],
-              ),
-            ),
+            Text('แชทกับทีมงาน', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            Text('สอบถามการจอง การชำระเงิน หรือขอความช่วยเหลือ', style: TextStyle(fontSize: 11, color: AppColors.textSoft, fontWeight: FontWeight.w400)),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: 'ช่องทางติดต่ออื่น',
+            icon: const Icon(Icons.info_outline_rounded),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ContactScreen())),
+          ),
+        ],
+      ),
+      body: Session.isAdmin
+          ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('ผู้ดูแลระบบตอบแชทลูกค้าได้ที่แท็บ "แชท" ในหน้าแอดมิน', textAlign: TextAlign.center)))
+          : ChatThread(
+              load: (after) => ApiService.chatMessages(after: after),
+              send: ApiService.chatSend,
+              emptyText: 'ทักทายทีมงานได้เลย\nเราจะตอบกลับโดยเร็วที่สุด',
+            ),
+    );
+  }
+}
+
+/// ปุ่มแชทบนแถบหัวแอป พร้อมป้ายจำนวนข้อความจากทีมงานที่ยังไม่ได้อ่าน (เช็คเองทุก 15 วินาที)
+class ChatButton extends StatefulWidget {
+  const ChatButton({super.key});
+
+  @override
+  State<ChatButton> createState() => _ChatButtonState();
+}
+
+class _ChatButtonState extends State<ChatButton> {
+  int _unread = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final n = await ApiService.chatUnread();
+    if (mounted && n != _unread) setState(() => _unread = n);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      style: appBarIconStyle,
+      tooltip: 'แชทกับทีมงาน',
+      onPressed: () async {
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen()));
+        _load();
+      },
+      icon: Badge(
+        isLabelVisible: _unread > 0,
+        label: Text(_unread > 9 ? '9+' : '$_unread'),
+        child: const Icon(Icons.support_agent_rounded),
       ),
     );
   }

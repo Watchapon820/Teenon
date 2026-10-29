@@ -10,6 +10,8 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  // ให้ DATE/DATETIME ส่งออกเป็นสตริง 'YYYY-MM-DD' กันวันที่เพี้ยนจาก timezone
+  dateStrings: true,
 });
 
 module.exports = pool;

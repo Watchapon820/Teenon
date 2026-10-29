@@ -1,11 +1,11 @@
 {
-    "name": "teenon_flutter_frontend",
-    "short_name": "teenon_flutter_frontend",
+    "name": "Teenon - จองโรงแรม",
+    "short_name": "Teenon",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFF6EA",
+    "theme_color": "#F4694F",
+    "description": "แอปจองโรงแรม Teenon",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

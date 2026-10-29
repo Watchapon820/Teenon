@@ -33,6 +33,24 @@ class AppSectionTitle extends StatelessWidget {
   }
 }
 
+/// โลโก้แอป (เตียง + พระจันทร์) ตัวเดียวกับไอคอนแอปบนมือถือ
+class AppLogo extends StatelessWidget {
+  const AppLogo({super.key, this.size = 50, this.admin = false});
+
+  final double size;
+
+  /// true = โลโก้โทนฟ้าสำหรับฝั่งแอดมิน
+  final bool admin;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.22),
+      child: Image.asset(admin ? 'assets/images/app_logo_admin.png' : 'assets/images/app_logo.png', width: size, height: size, fit: BoxFit.cover),
+    );
+  }
+}
+
 class GradientIconBox extends StatelessWidget {
   const GradientIconBox({
     super.key,
@@ -156,7 +174,7 @@ class HotelCard extends StatelessWidget {
                   const Spacer(),
                   Text(
                     '${hotel.price.toStringAsFixed(0)}฿',
-                    style: const TextStyle(color: AppColors.navy, fontSize: 18, fontWeight: FontWeight.w900),
+                    style: const TextStyle(color: AppColors.navy, fontSize: 18, fontWeight: FontWeight.w800),
                   ),
                   const Text('/คืน', style: TextStyle(color: AppColors.textSoft, fontSize: 11)),
                 ],
@@ -213,6 +231,120 @@ class EmptyState extends StatelessWidget {
             const SizedBox(height: 6),
             Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSoft)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// ราคาบาท: จำนวนเต็มไม่มีทศนิยม ถ้ามีเศษแสดง 2 ตำแหน่ง (เช่น ราคาหลังส่วนลด 3.75)
+String formatBaht(num v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
+
+/// พื้นหลังแบนเนอร์โรงแรม: ใช้รูปโรงแรมถ้ามี (ลดความสว่างลงให้ตัวอักษรสีขาวอ่านง่าย)
+/// สีไล่ [gradient] เป็นพื้นด้านหลัง จึงยังเห็นสีสวย ๆ ระหว่างรูปกำลังโหลดหรือถ้าโหลดรูปไม่ได้
+BoxDecoration hotelBannerDecoration({String? imageUrl, required List<Color> gradient, double radius = 20}) {
+  return BoxDecoration(
+    gradient: LinearGradient(colors: gradient),
+    image: imageUrl == null
+        ? null
+        : DecorationImage(
+            image: NetworkImage(imageUrl),
+            fit: BoxFit.cover,
+            colorFilter: const ColorFilter.mode(Colors.black45, BlendMode.darken),
+          ),
+    borderRadius: BorderRadius.circular(radius),
+  );
+}
+
+/// ปุ่มไอคอนวงกลมสีขาวขอบอ่อน ไอคอนสีส้ม ใช้ที่แถบบนของแอป
+final ButtonStyle appBarIconStyle = IconButton.styleFrom(
+  backgroundColor: Colors.white,
+  foregroundColor: AppColors.primary,
+  fixedSize: const Size(42, 42),
+  side: const BorderSide(color: AppColors.border),
+);
+
+/// ปุ่มไอคอนวงกลมสีขาวขอบอ่อน สีไอคอนตามธีมที่ส่งมา ใช้ที่แถบบนของหน้าแอดมิน
+ButtonStyle appBarIconStyleWith(Color color, Color border) => IconButton.styleFrom(
+      backgroundColor: Colors.white,
+      foregroundColor: color,
+      fixedSize: const Size(42, 42),
+      side: BorderSide(color: border),
+    );
+
+class NavItem {
+  const NavItem(this.icon, this.label, {this.badge = 0});
+  final IconData icon;
+  final String label;
+  final int badge;
+}
+
+/// แท็บบาร์ล่างแบบแคปซูล: แท็บที่เลือกเป็นเม็ดสีมีไอคอน+ชื่อ แท็บอื่นเป็นไอคอนเฉย ๆ (ใช้ทั้งฝั่งผู้ใช้และแอดมิน)
+class PillNavBar extends StatelessWidget {
+  const PillNavBar({super.key, required this.items, required this.currentIndex, required this.onTap, required this.color});
+
+  final List<NavItem> items;
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final many = items.length > 5;
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: [BoxShadow(color: Color(0x1A5A4A2B), blurRadius: 18, offset: Offset(0, -4))],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 10, 8, 10),
+          child: Row(
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Expanded(
+                  flex: i == currentIndex ? (many ? 4 : 3) : 2,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => onTap(i),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOut,
+                      height: 46,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: BoxDecoration(
+                        color: i == currentIndex ? color : Colors.transparent,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Badge(
+                            isLabelVisible: items[i].badge > 0,
+                            label: Text(items[i].badge > 9 ? '9+' : '${items[i].badge}'),
+                            child: Icon(items[i].icon, size: many ? 22 : 23, color: i == currentIndex ? Colors.white : AppColors.textSoft),
+                          ),
+                          if (i == currentIndex) ...[
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                items[i].label,
+                                maxLines: 1,
+                                overflow: TextOverflow.clip,
+                                softWrap: false,
+                                style: TextStyle(color: Colors.white, fontSize: many ? 12 : 13, fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

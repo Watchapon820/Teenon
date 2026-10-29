@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
 
 class ReviewScreen extends StatefulWidget {
-  const ReviewScreen({super.key, required this.hotelName});
+  const ReviewScreen({super.key, required this.hotelName, required this.bookingCode});
 
   final String hotelName;
+  final String bookingCode;
 
   @override
   State<ReviewScreen> createState() => _ReviewScreenState();
@@ -14,11 +16,33 @@ class ReviewScreen extends StatefulWidget {
 
 class _ReviewScreenState extends State<ReviewScreen> {
   int rating = 5;
+  final _comment = TextEditingController();
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _comment.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    setState(() => _sending = true);
+    try {
+      await ApiService.submitReview(bookingCode: widget.bookingCode, rating: rating, comment: _comment.text.trim());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ขอบคุณสำหรับรีวิว')));
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _sending = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Write a review')),
+      appBar: AppBar(title: const Text('เขียนรีวิว')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
@@ -32,7 +56,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   children: [
                     const GradientIconBox(icon: Icons.rate_review_rounded, size: 68),
                     const SizedBox(height: 16),
-                    const Text('ประสบการณ์โดยรวมเป็นอย่างไร?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.text)),
+                    const Text('ประสบการณ์โดยรวมเป็นอย่างไร?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.text)),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -46,21 +70,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     ),
                     Text('$rating / 5', style: const TextStyle(color: AppColors.textSoft, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 16),
-                    const TextField(maxLines: 5, decoration: InputDecoration(labelText: 'เขียนรีวิว', alignLabelWithHint: true, hintText: 'เช่น ห้องสะอาด บริการดี...')),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.add_photo_alternate_outlined), label: const Text('แนบรูปภาพ (Demo)')),
+                    TextField(
+                      controller: _comment,
+                      maxLines: 5,
+                      maxLength: 2000,
+                      decoration: const InputDecoration(labelText: 'เขียนรีวิว', alignLabelWithHint: true, hintText: 'เช่น ห้องสะอาด บริการดี...'),
+                    ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 18),
             FilledButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('บันทึกรีวิวบนหน้าจอแล้ว (Frontend Demo)')));
-                Navigator.pop(context);
-              },
+              onPressed: _sending ? null : _send,
               icon: const Icon(Icons.send_rounded),
-              label: const Text('ส่งรีวิว'),
+              label: Text(_sending ? 'กำลังส่ง...' : 'ส่งรีวิว'),
             ),
           ],
         ),

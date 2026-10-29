@@ -11,3 +11,11 @@ android/local.properties
 *.iml
 node_modules/
 .env
+uploads/
+server.log
+private_uploads/
+ADMIN_PASSWORD.txt
+
+dist/
+
+tools/

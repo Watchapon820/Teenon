@@ -26,7 +26,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
         actions: [
           IconButton(
             onPressed: () => setState(() => saved = !saved),
-            icon: Icon(saved ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: saved ? AppColors.danger : null),
+            icon: Icon(saved ? Icons.star_rounded : Icons.star_border_rounded, size: 30, color: saved ? const Color(0xFFFFC83D) : null),
           ),
           const SizedBox(width: 8),
         ],
@@ -54,7 +54,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(hotel.name, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
+                              Text(hotel.name, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800)),
                               const SizedBox(height: 7),
                               Row(
                                 children: [
@@ -131,7 +131,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                                   ],
                                 ),
                               ),
-                              Text('${room.$3}฿', style: const TextStyle(color: AppColors.navy, fontWeight: FontWeight.w900, fontSize: 17)),
+                              Text('${room.$3}฿', style: const TextStyle(color: AppColors.navy, fontWeight: FontWeight.w800, fontSize: 17)),
                             ],
                           ),
                         ),
@@ -173,12 +173,17 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Starting from', style: TextStyle(color: AppColors.textSoft, fontSize: 12)),
-                        Text('${hotel.price}฿ / คืน', style: const TextStyle(color: AppColors.navy, fontSize: 21, fontWeight: FontWeight.w900)),
+                        Text('${hotel.price}฿ / คืน', style: const TextStyle(color: AppColors.navy, fontSize: 21, fontWeight: FontWeight.w800)),
                       ],
                     ),
                   ),
                   FilledButton.icon(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BookingScreen(hotel: hotel))),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BookingScreen(hotel: hotel),
+                      ),
+                    ),
                     icon: const Icon(Icons.event_available_rounded),
                     label: const Text('จองห้องพัก'),
                   ),

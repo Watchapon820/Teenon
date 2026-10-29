@@ -2,22 +2,26 @@
   "name": "teenonflutterfrontend",
   "version": "1.0.0",
   "description": "A new Flutter project.",
-  "main": "index.js",
+  "main": "server.js",
   "directories": {
     "lib": "lib"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "seed": "node seed.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.3",
     "express": "^5.2.1",
-    "mysql2": "^3.24.4"
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.24.4",
+    "nodemailer": "^10.2.1"
   }
 }

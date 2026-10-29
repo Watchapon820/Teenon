@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../screens/booking_list_screen.dart';
 import '../screens/chat_screen.dart';
 import '../screens/home_screen.dart';
+import '../screens/notifications_screen.dart';
 import '../screens/hotel_list_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/saved_screen.dart';
 import '../screens/settings_screen.dart';
 import '../theme/app_theme.dart';
+import 'common_widgets.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({
@@ -40,44 +42,72 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 78,
+        toolbarHeight: 74,
         titleSpacing: 20,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const Text('Teenon', style: TextStyle(color: AppColors.navy, fontSize: 25, fontWeight: FontWeight.w900)),
-            Text(title, style: const TextStyle(color: AppColors.textSoft, fontSize: 12, fontWeight: FontWeight.w500)),
+            const AppLogo(size: 44),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Teenon', style: TextStyle(color: AppColors.navy, fontSize: 22, fontWeight: FontWeight.w800, height: 1.1)),
+                  Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textSoft, fontSize: 12, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
           ],
         ),
         actions: [
           ...?actions,
-          IconButton(
-            tooltip: 'Chat',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen())),
-            icon: const Icon(Icons.support_agent_rounded),
+          // ปุ่มไอคอนด้านขวาเป็นวงกลมสีขาว ไอคอนสีส้ม
+          Theme(
+            data: Theme.of(context).copyWith(
+              iconButtonTheme: IconButtonThemeData(
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppColors.primary,
+                  fixedSize: const Size(42, 42),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const NotificationBell(),
+                const SizedBox(width: 6),
+                const ChatButton(),
+                const SizedBox(width: 6),
+                IconButton(
+                  style: appBarIconStyle,
+                  tooltip: 'ตั้งค่า',
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                  icon: const Icon(Icons.tune_rounded),
+                ),
+              ],
+            ),
           ),
-          IconButton(
-            tooltip: 'Settings',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-            icon: const Icon(Icons.tune_rounded),
-          ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 16),
         ],
       ),
       body: SafeArea(top: false, child: child),
       bottomNavigationBar: showNavigation
-          ? NavigationBar(
-              selectedIndex: currentIndex,
-              onDestinationSelected: (index) {
+          ? PillNavBar(
+              color: AppColors.primary,
+              currentIndex: currentIndex,
+              items: const [
+                NavItem(Icons.home_rounded, 'หน้าแรก'),
+                NavItem(Icons.hotel_rounded, 'โรงแรม'),
+                NavItem(Icons.favorite_rounded, 'บันทึกไว้'),
+                NavItem(Icons.receipt_long_rounded, 'การจอง'),
+                NavItem(Icons.person_rounded, 'โปรไฟล์'),
+              ],
+              onTap: (index) {
                 if (index != currentIndex) go(context, index);
               },
-              destinations: const [
-                NavigationDestination(icon: Icon(Icons.home_rounded), label: 'Home'),
-                NavigationDestination(icon: Icon(Icons.hotel_rounded), label: 'Hotels'),
-                NavigationDestination(icon: Icon(Icons.favorite_rounded), label: 'Saved'),
-                NavigationDestination(icon: Icon(Icons.receipt_long_rounded), label: 'Bookings'),
-                NavigationDestination(icon: Icon(Icons.person_rounded), label: 'Profile'),
-              ],
             )
           : null,
     );

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../Admin/admin_rooms_screen.dart';
+import '../Admin/room_repository.dart';
+import '../api_service.dart';
+import '../auth/session.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
+import 'forgot_password_screen.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
 
@@ -13,9 +18,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final emailController = TextEditingController(text: 'demo@teenon.app');
-  final passwordController = TextEditingController(text: '123456');
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   bool obscure = true;
+  bool loading = false;
 
   @override
   void dispose() {
@@ -24,9 +30,30 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void login() {
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+  Future<void> login() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      _toast('กรอกอีเมลและรหัสผ่าน');
+      return;
+    }
+    setState(() => loading = true);
+    try {
+      await ApiService.login(email, password);
+      if (!mounted) return;
+      // แยกหน้าตาม role: admin → หน้าแอดมิน, user → หน้าหลัก
+      final Widget next = Session.isAdmin
+          ? AdminRoomsScreen(repository: ApiRoomRepository())
+          : const HomeScreen();
+      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => next), (route) => false);
+    } catch (e) {
+      if (mounted) _toast(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
   }
+
+  void _toast(String msg) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
   @override
   Widget build(BuildContext context) {
@@ -37,41 +64,51 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // ส่วนหัว: ภาพตึก (assets/images/login_bg.png) เป็นพื้นหลัง + แถบสีครีมจางทางซ้ายให้ข้อความอ่านง่าย
               Container(
                 height: 245,
-                padding: const EdgeInsets.all(24),
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.navy, AppColors.primary, AppColors.teal],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                  color: const Color(0xFFF6F3EC),
+                  image: const DecorationImage(
+                    image: AssetImage('assets/images/login_bg.png'),
+                    fit: BoxFit.cover,
+                    alignment: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(32),
                 ),
                 child: Stack(
                   children: [
-                    const Align(
-                      alignment: Alignment.topRight,
-                      child: Icon(Icons.apartment_rounded, size: 108, color: Colors.white12),
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [const Color(0xFFF6F3EC).withValues(alpha: 0.95), const Color(0xFFF6F3EC).withValues(alpha: 0.0)],
+                            stops: const [0.35, 0.85],
+                          ),
+                        ),
+                      ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            GradientIconBox(icon: Icons.hotel_class_rounded, size: 50, colors: [Colors.white24, Colors.white10]),
-                            SizedBox(width: 12),
-                            Text('Teenon', style: TextStyle(color: Colors.white, fontSize: 31, fontWeight: FontWeight.w900)),
-                          ],
-                        ),
-                        const Spacer(),
-                        const Text('Find your perfect stay', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)),
-                        const SizedBox(height: 6),
-                        Text(
-                          'ค้นหา เปรียบเทียบ และจองโรงแรมได้ง่ายในแอปเดียว',
-                          style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              AppLogo(size: 54),
+                              SizedBox(width: 12),
+                              Text('Teenon', style: TextStyle(color: AppColors.navy, fontSize: 31, fontWeight: FontWeight.w800)),
+                            ],
+                          ),
+                          const Spacer(),
+                          const Text('ค้นหาที่พักที่ใช่สำหรับคุณ', style: TextStyle(color: AppColors.navy, fontSize: 26, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 6),
+                          const Text('ค้นหา เปรียบเทียบ และจองโรงแรมได้ง่ายในแอปเดียว', style: TextStyle(color: AppColors.textSoft, fontSize: 14)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -84,14 +121,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text('Welcome back', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: AppColors.text)),
+                        const Text('ยินดีต้อนรับกลับมา', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.text)),
                         const SizedBox(height: 4),
                         const Text('เข้าสู่ระบบเพื่อดูดีลและจัดการการจองของคุณ', style: TextStyle(color: AppColors.textSoft)),
                         const SizedBox(height: 20),
                         TextField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(prefixIcon: Icon(Icons.mail_outline_rounded), labelText: 'Email'),
+                          decoration: const InputDecoration(prefixIcon: Icon(Icons.mail_outline_rounded), labelText: 'อีเมล'),
                         ),
                         const SizedBox(height: 12),
                         TextField(
@@ -99,26 +136,30 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: obscure,
                           decoration: InputDecoration(
                             prefixIcon: const Icon(Icons.lock_outline_rounded),
-                            labelText: 'Password',
+                            labelText: 'รหัสผ่าน',
                             suffixIcon: IconButton(
                               onPressed: () => setState(() => obscure = !obscure),
                               icon: Icon(obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 18),
-                        FilledButton.icon(onPressed: login, icon: const Icon(Icons.login_rounded), label: const Text('เข้าสู่ระบบ')),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => ForgotPasswordScreen(initialEmail: emailController.text.trim())),
+                            ),
+                            child: const Text('ลืมรหัสผ่าน?'),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        FilledButton.icon(onPressed: loading ? null : login, icon: const Icon(Icons.login_rounded), label: Text(loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ')),
                         const SizedBox(height: 10),
                         OutlinedButton.icon(
                           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
                           icon: const Icon(Icons.person_add_alt_1_rounded),
                           label: const Text('สร้างบัญชีใหม่'),
-                        ),
-                        const SizedBox(height: 14),
-                        const Text(
-                          'Frontend Demo • ยังไม่เชื่อม Backend / Database',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.textSoft, fontSize: 12),
                         ),
                       ],
                     ),

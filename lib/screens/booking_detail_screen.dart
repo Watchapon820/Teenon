@@ -1,39 +1,50 @@
 import 'package:flutter/material.dart';
 
+import '../api_service.dart';
+import '../models/booking_record.dart';
 import '../models/hotel.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
 import 'cancel_booking_screen.dart';
+import 'payment_screen.dart';
 import 'review_screen.dart';
 
 class BookingDetailScreen extends StatelessWidget {
-  const BookingDetailScreen({super.key, required this.hotel, required this.total});
+  const BookingDetailScreen({super.key, required this.hotel, required this.total, this.booking});
 
   final Hotel hotel;
   final int total;
 
+  /// ข้อมูลการจองจริงจากฐานข้อมูล ถ้าไม่ส่งมาจะแสดงข้อมูลตัวอย่างเหมือนเดิม
+  final BookingRecord? booking;
+
   @override
   Widget build(BuildContext context) {
+    final b = booking;
+    final cancelled = b?.isCancelled ?? false;
+    final hotelName = (b != null && b.hotelName.isNotEmpty) ? b.hotelName : hotel.name;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Booking summary')),
+      appBar: AppBar(title: const Text('สรุปการจอง')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
           children: [
             Container(
               padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: hotel.gradient),
-                borderRadius: BorderRadius.circular(28),
-              ),
+              decoration: hotelBannerDecoration(imageUrl: ApiService.imageUrl(b?.hotelImage), gradient: hotel.gradient, radius: 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AppChip(label: 'ยืนยันแล้ว', icon: Icons.verified_rounded, accent: true),
+                  AppChip(
+                    label: b?.statusText ?? 'ยืนยันแล้ว',
+                    icon: cancelled ? Icons.cancel_rounded : ((b?.isPending ?? false) ? Icons.hourglass_top_rounded : Icons.verified_rounded),
+                    accent: !cancelled && !(b?.isPending ?? false),
+                  ),
                   const SizedBox(height: 18),
-                  Text(hotel.name, style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w900)),
+                  Text(hotelName, style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 6),
-                  const Text('Booking ID: TN-0001', style: TextStyle(color: Color(0xFFEAF1FF))),
+                  Text('รหัสการจอง: ${b?.code ?? 'TN-0001'}', style: const TextStyle(color: Color(0xFFEAF1FF))),
                 ],
               ),
             ),
@@ -43,36 +54,69 @@ class BookingDetailScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(18),
                 child: Column(
                   children: [
-                    const InfoRow(icon: Icons.person_rounded, label: 'ชื่อผู้จอง', value: 'Demo User'),
-                    const InfoRow(icon: Icons.calendar_month_rounded, label: 'Check-in', value: '20 Aug 2026'),
-                    const InfoRow(icon: Icons.event_rounded, label: 'Check-out', value: '22 Aug 2026'),
-                    const InfoRow(icon: Icons.bed_rounded, label: 'ห้อง', value: 'Deluxe Room'),
-                    const InfoRow(icon: Icons.people_alt_rounded, label: 'ผู้เข้าพัก', value: '2 คน'),
-                    InfoRow(icon: Icons.payments_rounded, label: 'ยอดชำระ', value: '$total฿'),
+                    InfoRow(icon: Icons.person_rounded, label: 'ชื่อผู้จอง', value: b?.guestName ?? 'Demo User'),
+                    InfoRow(icon: Icons.calendar_month_rounded, label: 'เช็คอิน', value: b?.checkInText ?? '20 ส.ค. 2026'),
+                    InfoRow(icon: Icons.event_rounded, label: 'เช็คเอาต์', value: b?.checkOutText ?? '22 ส.ค. 2026'),
+                    InfoRow(icon: Icons.bed_rounded, label: 'ห้อง', value: b?.roomName ?? 'Deluxe Room'),
+                    InfoRow(icon: Icons.people_alt_rounded, label: 'ผู้เข้าพัก', value: '${b?.numGuests ?? 2} คน'),
+                    InfoRow(icon: Icons.payments_rounded, label: 'ยอดชำระ', value: '${b?.total ?? total}฿'),
+                    if (b != null && !cancelled)
+                      InfoRow(
+                        icon: Icons.receipt_long_rounded,
+                        label: 'การชำระเงิน',
+                        value: b.isPending ? (b.hasSlip ? 'ส่งสลิปแล้ว รอตรวจสอบ' : 'ยังไม่ได้ชำระเงิน') : 'ได้รับการยืนยันแล้ว',
+                      ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 14),
+            if (b != null && b.awaitingPayment) ...[
+              FilledButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => PaymentScreen(hotelName: hotelName, total: b.total, bookingCode: b.code)),
+                ),
+                icon: const Icon(Icons.qr_code_2_rounded),
+                label: const Text('ชำระเงิน / ส่งสลิป'),
+              ),
+              const SizedBox(height: 10),
+            ],
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewScreen(hotelName: hotel.name))),
+                    // รีวิวได้เมื่อยืนยันแล้ว + ถึงวันเข้าพัก + ยังไม่เคยรีวิว
+                    onPressed: (b != null && b.canReview)
+                        ? () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => ReviewScreen(hotelName: hotelName, bookingCode: b.code)),
+                            )
+                        : null,
                     icon: const Icon(Icons.rate_review_rounded),
-                    label: const Text('เขียนรีวิว'),
+                    label: Text(b != null && b.hasReview ? 'รีวิวแล้ว' : 'เขียนรีวิว'),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CancelBookingScreen(hotelName: hotel.name))),
+                    // การจองที่ยกเลิกแล้ว หรือเลยกำหนดยกเลิกตามนโยบาย กดไม่ได้
+                    onPressed: (cancelled || b?.cancelBlock != null)
+                        ? null
+                        : () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => CancelBookingScreen(hotelName: hotelName, booking: b)),
+                            ),
                     icon: const Icon(Icons.cancel_outlined),
-                    label: const Text('ยกเลิกการจอง'),
+                    label: Text(cancelled ? 'ยกเลิกแล้ว' : (b?.cancelBlock != null ? 'ยกเลิกไม่ได้' : 'ยกเลิกการจอง')),
                   ),
                 ),
               ],
             ),
+            if (!cancelled && b?.cancelBlock != null) ...[
+              const SizedBox(height: 8),
+              Text(b!.cancelBlock!, style: const TextStyle(color: AppColors.textSoft, fontSize: 12)),
+            ],
           ],
         ),
       ),
