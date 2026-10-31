@@ -18,6 +18,9 @@
 | `CONTACT_PHONE` `CONTACT_LINE` `CONTACT_EMAIL` `CONTACT_HOURS` | หน้า "ติดต่อเรา" |
 | `UNPAID_EXPIRE_HOURS` | การจองที่ไม่ส่งสลิปเกินเวลานี้ถูกยกเลิกอัตโนมัติ (ค่าเริ่มต้น 24) |
 | `TRUST_PROXY` | ตั้งเป็น `1` เมื่อรันหลัง reverse proxy ที่ทำ HTTPS |
+| `CORS_ORIGINS` | รายการ origin ของเว็บที่อนุญาต คั่นด้วยจุลภาค (เช่น `https://app.example.com`); production ต้องระบุ origin ที่ใช้จริง |
+
+ระหว่างพัฒนา อนุญาต origin จาก `localhost` และ `127.0.0.1` ได้ทุกพอร์ต; production จะรับเฉพาะ origin ที่ระบุใน `CORS_ORIGINS` และยังรองรับแอปมือถือที่ไม่ส่ง `Origin` header
 
 ## ขั้นตอนการจอง
 ลูกค้าจอง → สถานะ **รอชำระเงิน** → สแกน QR/โอน แล้วแนบสลิป → **รอตรวจสลิป** → แอดมินกด **ยืนยัน** (ลูกค้าได้แจ้งเตือน) · แอดมินปฏิเสธ/ยกเลิกพร้อมเหตุผลได้ · ไม่ชำระใน 24 ชม. ระบบยกเลิกให้เอง
@@ -31,7 +34,7 @@ api.example.com {
 }
 ```
 แล้วตั้ง `TRUST_PROXY=1` และสร้างแอปด้วย `--dart-define=API_BASE_URL=https://api.example.com/api`
-Android: ถ้าใช้ HTTPS ทั้งหมด ให้ลบ `android:usesCleartextTraffic="true"` ออกจาก `AndroidManifest.xml`
+Android รุ่น release ปิดการเชื่อมต่อ HTTP ที่ไม่เข้ารหัส ส่วน debug build ยังอนุญาต HTTP สำหรับทดสอบ API ในเครื่อง; ก่อน build release ให้ชี้ `API_BASE_URL` ไปยัง HTTPS เสมอ
 
 ## เช็กลิสต์ความปลอดภัยก่อนเปิดใช้จริง
 - เปลี่ยนรหัสผ่านฐานข้อมูลและ `JWT_SECRET` ถ้าเคยอยู่ใน git/แชร์ออกไป (`.env` ห้าม commit)

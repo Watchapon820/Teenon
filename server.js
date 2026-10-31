@@ -13,6 +13,23 @@ const PORT = process.env.PORT || 5000;
 // หลัง reverse proxy (เช่น Caddy/nginx ที่ทำ HTTPS) ให้ตั้ง TRUST_PROXY=1 ใน .env
 if (process.env.TRUST_PROXY) app.set('trust proxy', 1);
 app.disable('x-powered-by');
+const allowedOrigins = new Set((process.env.CORS_ORIGINS || '').split(',').map(origin => origin.trim()).filter(Boolean));
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) return callback(null, true);
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const { hostname, protocol } = new URL(origin);
+        if ((hostname === 'localhost' || hostname === '127.0.0.1') && (protocol === 'http:' || protocol === 'https:')) {
+          return callback(null, true);
+        }
+      } catch {
+        return callback(null, false);
+      }
+    }
+    return callback(null, false);
+  },
+};
 app.use((req, res, next) => {
   res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' });
   if (req.secure) res.set('Strict-Transport-Security', 'max-age=15552000');
@@ -28,7 +45,7 @@ app.use((req, res, next) => {
   });
   next();
 });
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 
 // ===== รูปภาพ: เก็บไฟล์ในโฟลเดอร์ uploads/ แล้วให้เข้าถึงผ่าน /uploads/<ชื่อไฟล์> =====
