@@ -56,7 +56,7 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 app.use('/uploads', express.static(UPLOAD_DIR));
 
 // ให้คอลัมน์ bookings.status รองรับสถานะ 'pending' (รอยืนยัน) ถ้ายังเป็น ENUM ที่ไม่มีค่านี้
-(async () => {
+void (async () => {
   try {
     const [cols] = await db.query("SHOW COLUMNS FROM bookings LIKE 'status'");
     const type = cols[0] && cols[0].Type;
@@ -69,7 +69,7 @@ app.use('/uploads', express.static(UPLOAD_DIR));
 })();
 
 // เพิ่มคอลัมน์ image_url ให้ตาราง hotels / rooms ถ้ายังไม่มี
-(async () => {
+void (async () => {
   for (const table of ['hotels', 'rooms']) {
     try {
       const [cols] = await db.query(`SHOW COLUMNS FROM ${table} LIKE 'image_url'`);
@@ -514,7 +514,7 @@ app.post('/api/bookings', authenticate, async (req, res) => {
   const coStr = String(checkOut || '').slice(0, 10);
   const ci = new Date(ciStr + 'T00:00:00Z');
   const co = new Date(coStr + 'T00:00:00Z');
-  if (!hotelId || !roomId || isNaN(ci) || isNaN(co) || co <= ci) {
+  if (!hotelId || !roomId || Number.isNaN(ci.getTime()) || Number.isNaN(co.getTime()) || co <= ci) {
     return res.status(400).json({ success: false, message: 'ข้อมูลการจองไม่ถูกต้อง (ตรวจโรงแรม ห้อง และวันที่เข้าพัก/ออก)' });
   }
   if (ciStr < todayStr()) {

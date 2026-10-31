@@ -35,7 +35,7 @@ async function upsertUser({ name, email, password, role, reset }) {
   return 'exists';
 }
 
-(async () => {
+void (async () => {
   try {
     const resetAdmin = process.argv.includes('--reset-admin');
     const adminPassword = process.env.SEED_ADMIN_PASSWORD || randomPassword();
@@ -68,5 +68,7 @@ async function upsertUser({ name, email, password, role, reset }) {
     console.error('ผิดพลาด:', e.message || e.code);
     process.exitCode = 1;
   }
-  process.exit();
-})();
+})().then(() => db.end()).catch((e) => {
+  console.error('ปิดการเชื่อมต่อฐานข้อมูลไม่สำเร็จ:', e.message || e.code);
+  process.exitCode = 1;
+});

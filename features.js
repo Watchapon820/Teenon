@@ -648,7 +648,7 @@ module.exports = function registerFeatures(app, { authenticate, requireAdmin, er
     if (title.length > 100) return { error: 'ชื่อดีลยาวเกิน 100 ตัวอักษร' };
     if (description.length > 255) return { error: 'คำอธิบายยาวเกิน 255 ตัวอักษร' };
     if (!Number.isInteger(pct) || pct < 1 || pct > 90) return { error: 'ส่วนลดต้องเป็นจำนวนเต็ม 1-90 %' };
-    if (!DATE_RE.test(start) || !DATE_RE.test(end) || isNaN(new Date(start + 'T00:00:00Z')) || isNaN(new Date(end + 'T00:00:00Z'))) {
+    if (!DATE_RE.test(start) || !DATE_RE.test(end) || Number.isNaN(new Date(start + 'T00:00:00Z').getTime()) || Number.isNaN(new Date(end + 'T00:00:00Z').getTime())) {
       return { error: 'ระบุวันที่เริ่มและวันที่สิ้นสุดให้ถูกต้อง (YYYY-MM-DD)' };
     }
     if (end < start) return { error: 'วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม' };
