@@ -131,8 +131,8 @@ async function expireUnpaidBookings() {
 }
 
 module.exports = function registerFeatures(app, { authenticate, requireAdmin, errText, userCols, bcrypt }) {
-  migrate();
-  expireUnpaidBookings();
+  void migrate();
+  void expireUnpaidBookings();
   setInterval(expireUnpaidBookings, 10 * 60 * 1000).unref();
 
   const fail = (res, error) => {
@@ -236,7 +236,7 @@ module.exports = function registerFeatures(app, { authenticate, requireAdmin, er
   // ===== รีวิว =====
   app.post('/api/reviews', authenticate, async (req, res) => {
     const code = String(req.body?.bookingCode || '');
-    const rating = parseInt(req.body?.rating, 10);
+    const rating = Number.parseInt(req.body?.rating, 10);
     const comment = String(req.body?.comment || '').trim().slice(0, 2000);
     if (!(rating >= 1 && rating <= 5)) return res.status(400).json({ success: false, message: 'ให้คะแนน 1-5 ดาว' });
     try {
@@ -414,7 +414,7 @@ module.exports = function registerFeatures(app, { authenticate, requireAdmin, er
       description: ['description', text],
       imageUrl: ['image_url', text],
       cancellationPolicy: ['cancellation_policy', text],
-      freeCancelDays: ['free_cancel_days', (v) => Math.max(0, parseInt(v, 10) || 0)],
+      freeCancelDays: ['free_cancel_days', (v) => Math.max(0, Number.parseInt(v, 10) || 0)],
       hasPool: ['has_pool', flag],
       hasBreakfast: ['has_breakfast', flag],
       hasWifi: ['has_wifi', flag],
@@ -637,7 +637,7 @@ module.exports = function registerFeatures(app, { authenticate, requireAdmin, er
 
   // ตรวจและแปลงข้อมูลดีลจาก body (คืน { error } หรือ { value })
   function parseDeal(b) {
-    const hotelId = parseInt(b.hotelId, 10);
+    const hotelId = Number.parseInt(b.hotelId, 10);
     const title = String(b.title ?? '').trim();
     const description = String(b.description ?? '').trim();
     const pct = Number(b.discountPercent);
@@ -776,9 +776,9 @@ module.exports = function registerFeatures(app, { authenticate, requireAdmin, er
 
   // แปลงฟิลด์จาก body เป็นคอลัมน์ของตาราง rooms (เฉพาะที่ส่งมา)
   function roomFields(body) {
-    const intOrNull = (v) => (v === '' || v == null ? null : Math.max(0, parseInt(v, 10) || 0));
+    const intOrNull = (v) => (v === '' || v == null ? null : Math.max(0, Number.parseInt(v, 10) || 0));
     const out = {};
-    if (body.quantity !== undefined) out.quantity = Math.max(1, parseInt(body.quantity, 10) || 1);
+    if (body.quantity !== undefined) out.quantity = Math.max(1, Number.parseInt(body.quantity, 10) || 1);
     if (body.maxGuests !== undefined) out.max_guests = intOrNull(body.maxGuests);
     if (body.bedType !== undefined) out.bed_type = String(body.bedType || '').trim() || null;
     if (body.sizeSqm !== undefined) out.size_sqm = intOrNull(body.sizeSqm);
@@ -810,8 +810,8 @@ module.exports = function registerFeatures(app, { authenticate, requireAdmin, er
   // ลดได้ไม่ต่ำกว่า 0 และไม่ต่ำกว่าจำนวนห้องที่ถูกจองไว้พร้อมกันสูงสุดตั้งแต่วันนี้เป็นต้นไป (กันห้องเกินจำนวน)
   app.put('/api/admin/rooms/:id/quantity', authenticate, requireAdmin, async (req, res) => {
     const hasQty = req.body?.quantity !== undefined;
-    const delta = parseInt(req.body?.delta, 10);
-    const qtyIn = parseInt(req.body?.quantity, 10);
+    const delta = Number.parseInt(req.body?.delta, 10);
+    const qtyIn = Number.parseInt(req.body?.quantity, 10);
     if (hasQty ? !Number.isInteger(qtyIn) : !Number.isInteger(delta)) {
       return res.status(400).json({ success: false, message: 'ระบุ delta หรือ quantity เป็นจำนวนเต็ม' });
     }

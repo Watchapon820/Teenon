@@ -28,7 +28,7 @@ async function migrate() {
 }
 
 module.exports = function registerChat(app, { authenticate, requireAdmin, errText, userCols }) {
-  migrate();
+  void migrate();
 
   const fail = (res, error) => res.status(500).json({ success: false, message: errText(error) });
   const bad = (res, message, status = 400) => res.status(status).json({ success: false, message });
@@ -67,7 +67,7 @@ module.exports = function registerChat(app, { authenticate, requireAdmin, errTex
     return { messages: rows.map((m) => shape(m, viewer)), readUpTo: r.id || 0 };
   }
 
-  const afterOf = (req) => Math.max(0, parseInt(req.query.after, 10) || 0);
+  const afterOf = (req) => Math.max(0, Number.parseInt(req.query.after, 10) || 0);
 
   // ===== ลูกค้า =====
   const customerOnly = (req, res, next) =>
@@ -135,7 +135,7 @@ module.exports = function registerChat(app, { authenticate, requireAdmin, errTex
   });
 
   app.get('/api/admin/chats/:userId', authenticate, requireAdmin, async (req, res) => {
-    const userId = parseInt(req.params.userId, 10);
+    const userId = Number.parseInt(req.params.userId, 10);
     if (!userId) return bad(res, 'ไม่พบผู้ใช้');
     try {
       const { messages, readUpTo } = await readThread(userId, 'admin', afterOf(req));
@@ -146,7 +146,7 @@ module.exports = function registerChat(app, { authenticate, requireAdmin, errTex
   });
 
   app.post('/api/admin/chats/:userId', authenticate, requireAdmin, async (req, res) => {
-    const userId = parseInt(req.params.userId, 10);
+    const userId = Number.parseInt(req.params.userId, 10);
     const body = cleanBody(req.body?.body);
     if (!userId) return bad(res, 'ไม่พบผู้ใช้');
     if (!body) return bad(res, 'พิมพ์ข้อความก่อนส่ง');

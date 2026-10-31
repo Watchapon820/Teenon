@@ -508,8 +508,8 @@ app.post('/api/bookings', authenticate, async (req, res) => {
   // userId มาจาก token เสมอ (ไม่เชื่อค่าจาก body)
   const userId = req.user.id;
   const { hotelId, roomId, guestName, guestEmail, guestPhone, checkIn, checkOut, specialRequest } = req.body;
-  const nRooms = Math.max(1, parseInt(req.body.numRooms, 10) || 1);
-  const nGuests = Math.max(1, parseInt(req.body.numGuests, 10) || 1);
+  const nRooms = Math.max(1, Number.parseInt(req.body.numRooms, 10) || 1);
+  const nGuests = Math.max(1, Number.parseInt(req.body.numGuests, 10) || 1);
   const ciStr = String(checkIn || '').slice(0, 10);
   const coStr = String(checkOut || '').slice(0, 10);
   const ci = new Date(ciStr + 'T00:00:00Z');
@@ -624,7 +624,7 @@ function cancelBlock(b) {
   const today = todayStr();
   if (today > checkIn) return 'เลยวันเช็คอินแล้ว ยกเลิกไม่ได้';
   const paid = b.status === 'confirmed' || Boolean(b.slip_file);
-  const days = Math.max(0, parseInt(b.free_cancel_days, 10) || 0);
+  const days = Math.max(0, Number.parseInt(b.free_cancel_days, 10) || 0);
   if (paid && days > 0 && today > addDays(checkIn, -days)) {
     return `เลยช่วงยกเลิกฟรีแล้ว (ต้องยกเลิกก่อนเช็คอิน ${days} วัน) กรุณาติดต่อเจ้าหน้าที่`;
   }
