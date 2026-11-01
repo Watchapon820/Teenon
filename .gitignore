@@ -19,3 +19,5 @@ ADMIN_PASSWORD.txt
 dist/
 
 tools/
+
+coverage/

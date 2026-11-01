@@ -1,0 +1,7 @@
+{
+  "all": true,
+  "include": ["*.js"],
+  "exclude": ["seed.js", "test/**", "node_modules/**", "coverage/**"],
+  "reporter": ["lcov", "text-summary"],
+  "reports-dir": "coverage"
+}

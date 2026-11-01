@@ -798,7 +798,10 @@ app.get('/', (req, res) => {
   res.send('🚀 Backend API พร้อมใช้งานแล้ว!');
 });
 
-app.listen(PORT, () => {
+// เปิดพอร์ตเฉพาะตอนรันด้วย `node server.js` (ตอน require จากเทสต์จะไม่เปิดพอร์ต)
+if (require.main === module) app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log('✅ เวอร์ชัน: ยกเลิกการจองผ่าน PUT /api/bookings/:code/cancel (บันทึกลงตาราง cancellations)');
 });
+
+module.exports = app;
