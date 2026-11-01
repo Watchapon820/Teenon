@@ -23,10 +23,11 @@ function useServer() {
   test.beforeEach(() => fakeDb.reset());
 
   // ip: ระบุเองเพื่อทดสอบ rate limit; ไม่ระบุ = IP ใหม่ทุกครั้ง
-  return async function call(method, url, { body, token, ip } = {}) {
+  return async function call(method, url, { body, token, ip, headers } = {}) {
     const res = await fetch(base + url, {
       method,
       headers: {
+        ...headers,
         'Content-Type': 'application/json',
         'X-Forwarded-For': ip || `10.1.${Math.floor(++seq / 250)}.${seq % 250}`,
         ...(token ? { Authorization: 'Bearer ' + token } : {}),

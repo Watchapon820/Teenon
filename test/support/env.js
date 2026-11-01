@@ -3,6 +3,7 @@
 process.env.JWT_SECRET = 'test-secret-for-unit-tests-only-1234567890';
 process.env.NODE_ENV = 'test';
 process.env.TRUST_PROXY = '1'; // ให้เทสต์ระบุ IP ผ่าน X-Forwarded-For (กัน rate limit ชนกันระหว่างเทสต์)
+process.env.CORS_ORIGINS = 'https://app.example.test, https://admin.example.test';
 process.env.PROMPTPAY_ID = '0812345678';
 process.env.BANK_NAME = 'TestBank';
 delete process.env.SMTP_HOST;

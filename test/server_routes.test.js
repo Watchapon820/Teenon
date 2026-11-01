@@ -89,6 +89,29 @@ test('ล็อกอิน/สมัคร: เกิน 20 ครั้งต�
   assert.equal(last.status, 429);
 });
 
+test.describe('CORS', () => {
+  const allowOrigin = async (origin) => (await call('GET', '/api/ping', { headers: origin ? { Origin: origin } : {} })).headers.get('access-control-allow-origin');
+
+  test('อนุญาตคำขอที่ไม่มี Origin (แอปมือถือ) และโดเมนใน CORS_ORIGINS', async () => {
+    assert.equal((await call('GET', '/api/ping')).status, 200);
+    assert.equal(await allowOrigin(null), null); // ไม่มี Origin = ไม่ใช่เบราว์เซอร์ ไม่ต้องใส่ header
+    assert.equal(await allowOrigin('https://app.example.test'), 'https://app.example.test');
+    assert.equal(await allowOrigin('https://admin.example.test'), 'https://admin.example.test');
+  });
+
+  test('นอกโหมด production อนุญาต localhost ทุกพอร์ต', async () => {
+    assert.equal(await allowOrigin('http://localhost:5173'), 'http://localhost:5173');
+    assert.equal(await allowOrigin('https://127.0.0.1:8080'), 'https://127.0.0.1:8080');
+  });
+
+  test('ปฏิเสธโดเมนอื่น โปรโตคอลแปลก และ Origin ที่ parse ไม่ได้', async () => {
+    assert.equal(await allowOrigin('https://evil.example.com'), null);
+    assert.equal(await allowOrigin('ftp://localhost'), null);
+    assert.equal(await allowOrigin('http://localhost.evil.com'), null);
+    assert.equal(await allowOrigin('not a url'), null);
+  });
+});
+
 test('GET /api/me: ไม่พบผู้ใช้ → 404 และฐานข้อมูลล่ม → 500', async () => {
   assert.equal((await call('GET', '/api/me', { token: userToken() })).status, 404);
   fakeDb.fail(/SELECT \* FROM users WHERE user_id/);
